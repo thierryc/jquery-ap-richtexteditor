@@ -1,0 +1,252 @@
+/* @override
+	http://127.0.0.1/svn/www.autreplanete.com/trunk/media/js/ap-jquery-plugins/jquery-ap-richtexteditor/css/apRichTextEditor.css 
+ */
+
+#rte1 {
+	width: 600px;
+	height: 150px;
+}
+
+.apRichTextEditor {
+	position: relative;
+	background-color: #f4f4f4;
+}
+
+.apRichTextEditor iframe {
+
+}
+
+.apRichTextEditorBody {
+	margin: 0;
+	padding: 0;
+}
+
+ul.apRichTextEditorToolbar {
+	position: absolute;
+	top: -38px;
+	left: 0;
+	list-style: none;
+	height: 38px;
+	margin: 0;
+	padding: 0 3px;
+	background: url(../image/tools-bt.png) repeat-x 0 -256px;
+}
+
+li.apRichTextEditorButton {
+	width: 32px;
+	float: left;
+	overflow: hidden;
+	font-size: .3em;
+	background-image: url(../image/tools-bt.png);
+	background-repeat: no-repeat;
+	margin-top: 4px;
+}
+
+li.apRichTextEditorSp {
+	width: 5px;
+	float: left;
+	overflow: hidden;
+	margin-top: 4px;
+}
+
+li.apRichTextEditorButton span {	
+	width: 100%;
+	height: 32px;
+	display: block;
+	background-position-y: -96px;
+	background-image: url(../image/tools-bt.png);
+	text-indent: -150px;
+}
+
+li.apRichTextEditorButton:hover {
+	background-position-y: -32px;
+}
+
+li.apRichTextEditorButton:active {
+	background-position-y: -64px;
+}
+
+ul.apRichTextEditorToolbar li.apRichTextEditorButton.selected {
+	background-position-y: -64px;
+}
+
+li.boldBt {
+	background-position: -32px 0;
+	width: 33px;
+}
+
+li.boldBt span {
+	background-position: -127px -96px;
+}
+
+li.italicBt {
+	background-position: -96px 0;
+}
+
+li.italicBt span {
+	background-position: -161px -96px;
+}
+
+li.justifyLeftBt {
+	background-position: -32px 0;
+	width: 33px;
+}
+
+li.justifyLeftBt span {
+	background-position: 1px -96px;
+}
+
+li.justifyCenterBt  {
+	background-position: -64px 0;
+	width: 33px;
+}
+
+li.justifyCenterBt span {
+	background-position: -31px -96px;
+}
+
+li.justifyRightBt {
+	background-position: -64px 0;
+	width: 33px;
+}
+
+li.justifyRightBt span {
+	background-position: -64px -96px;
+}
+
+li.justifyFullBt {
+	background-position: -96px 0;
+	width: 32px;
+}
+
+li.justifyFullBt span {
+	background-position: -96px -96px;
+}
+
+
+li.outdentBt {
+	background-position: -32px 0;
+	width: 33px;
+}
+
+li.outdentBt span {
+	background-position: -256px -96px;
+}
+
+
+li.indentBt {
+	background-position: -96px 0;
+}
+
+li.indentBt span {
+	background-position: -289px -96px;
+}
+
+li.undoBt {
+	background-position: -32px 0;
+	width: 33px;
+}
+
+li.undoBt span {
+	background-position: -318px -96px;
+}
+
+li.redoBt {
+	background-position: -96px 0;
+}
+
+li.redoBt span {
+	background-position: -353px -96px;
+}
+
+li.insertOrderedListBt {
+	background-position: -32px 0;
+	width: 33px;
+}
+
+li.insertOrderedListBt span {
+	background-position: -223px -128px;
+}
+
+li.insertUnorderedListBt {
+	background-position: -96px 0;
+}
+
+li.insertUnorderedListBt span {
+	background-position: -224px -96px;
+}
+
+li.createLinkBt {
+	background-position: -32px 0;
+	width: 33px;
+}
+
+li.createLinkBt span {
+	background-position: -382px -96px;
+}
+
+li.unlinkBt {
+	background-position: -96px 0;
+}
+
+li.unlinkBt span {
+	background-position: -417px -96px;
+}
+
+
+li.H1Bt {
+	background-position: -32px 0;
+	width: 33px;
+	
+}
+
+li.H1Bt span {
+	background-position: -94px -160px;
+}
+
+
+li.H2Bt {
+	background-position: -64px 0;
+	width: 33px;
+}
+
+li.H2Bt span {
+	background-position: -127px -160px;
+}
+
+
+li.H3Bt {
+	background-position: -64px 0;
+	width: 33px;
+}
+
+li.H3Bt span {
+	background-position: -159px -160px;
+}
+
+
+li.H4Bt {
+	background-position: -64px 0;
+	width: 33px;
+}
+
+li.H4Bt span {
+	background-position: -191px -160px;
+}
+
+
+li.paragraphBt {
+	background-position: -96px 0;
+}
+
+li.paragraphBt span {
+	background-position: -224px -160px;
+}
+
+li.removeFormatBt span {
+	background-position: -384px -128px;
+}
+
+
+
+
