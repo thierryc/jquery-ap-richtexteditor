@@ -1,5 +1,5 @@
 /*
-* jQuery rich text editor plugin 0.0.1a - Rich text editor (Chrome, Mozilla, Opera, Safari, Internet Explorer)
+* jQuery rich text editor plugin 0.0.a1 - Rich text editor (Chrome, Mozilla, Opera, Safari, Internet Explorer)
 *
 * Copyright (c) 2012 Thierry Charbonnel
 * Distributed under the MIT License.
