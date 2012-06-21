@@ -1,5 +1,5 @@
 /*
-* jQuery rich text editor plugin 0.0.1 - Rich text editor (Chrome, Mozilla, Opera, Safari, Internet Explorer)
+* jQuery rich text editor plugin 0.0.1a - Rich text editor (Chrome, Mozilla, Opera, Safari, Internet Explorer)
 *
 * Copyright (c) 2012 Thierry Charbonnel
 * Distributed under the MIT License.
@@ -532,7 +532,6 @@
                                 iframeDoc.execCommand("insertBrOnReturn", false, false);
                             } 
                             catch(e) {
-                                console.log('execCommand'),
                                 console.log(e);
                             }
                         } catch (error) {
@@ -555,7 +554,6 @@
                     });
                     
                     $iframeDoc.bind('mouseup', function(event) {
-                        console.log('setSelectedButton.mouseup');
                         setSelectedButton(getCurrentNode(iframe));
                     });
                     
@@ -563,10 +561,10 @@
                         var key = event.keyCode || event.which;
                         $this.trigger('apRichTextEditor.keydown', [iframe]);
                         if (!event.ctrlKey) {
-                            
                             switch ( key ) {
                                 case 13:
                                     currentNode = getCurrentNode(iframe);
+                                    resizeDoc($iframe);
                                     if (currentNode.tagName.toLowerCase() == 'div') {
                                         iframeDoc.execCommand('formatBlock', false, 'p');
                                     }
@@ -604,19 +602,19 @@
                         if (!event.ctrlKey) {
                             switch ( key ) {
                                 case 13:
-                                    resizeDoc($iframe);
+                                    /*
                                     if (currentTagName == 'div') {
                                         iframeDoc.execCommand('formatBlock', false, 'p');
                                         currentTagName = getCurrentNode(iframe).tagName.toLowerCase();
-                                    } 
-                                    
+                                    }
+                                    */
                                     if (data.settings.nextTagRules[currentTagName]) {
                                         iframeDoc.execCommand('formatBlock', false, data.settings.nextTagRules[currentTagName]);
                                     }
+                                    //resizeDoc($iframe);
                                     break;
                             }
                         }
-                        console.log('setSelectedButton.keyUp');
                         setSelectedButton(getCurrentNode(iframe));
                         $this.trigger('apRichTextEditor.keyup', [iframe]);
                     });
@@ -661,9 +659,12 @@
                         /* if IE */
                         setTimeout(function(){
                             var height = $iframeDoc.height();
+                            /*
                             $iframe.animate({
                                 height: parseInt( height )
                             }, 150);
+                            */
+                            $iframe.css('height', parseInt( height + 25 ));
                         },150);
                     }
                 } 
@@ -730,8 +731,6 @@
                     } else {
                         return false;
                     }
-                    //console.log(selection);
-                    //console.log(range);
                     return node;
                 };
                 
@@ -866,33 +865,11 @@
                             
                 }
                 
-                var tmp_cleanUpText = function(iframe){
-                    node = getCurrentNode(iframe);
-                    var text = $(node).text();
-                    $(node).contents()
-                        .filter(function() {
-                            return this.nodeType == 3;
-                        })
-                        .wrap('<p></p>').end()
-                        .filter('br').remove();
-                    iframe.contentWindow.focus();
+                var _cleanUpText = function(iframe){
                 }
                 
                 var _cleanWhitespace = function (node){
-                  for (var i=0; i< node.childNodes.length; i++)
-                  {
-                    var child = node.childNodes[i];
-                    if(child.nodeType == 3 && !/\S/.test(child.nodeValue))
-                    {
-                      node.removeChild(child);
-                      i--;
-                    }
-                    if(child.nodeType == 1)
-                    {
-                      _cleanWhitespace(child);
-                    }
-                  }
-                  return node;
+                    return node;
                 }
                 
                 var formatText = function(iframe, command, args) {
@@ -945,7 +922,7 @@
                                         iframe.contentWindow.document.execCommand('formatBlock', false, args);
                                     } 
                                     catch(e) {
-                                        console.log('execCommand'),
+                                        
                                         console.log(e);
                                     }
                                 }
@@ -959,7 +936,7 @@
                                     iframe.contentWindow.document.execCommand(command, false, args);
                                 } 
                                 catch(e) {
-                                    console.log('execCommand'),
+                                    
                                     console.log(e);
                                 }
                     		break;
@@ -970,13 +947,11 @@
                                 iframe.contentWindow.document.execCommand(command, false, args);
                             } 
                             catch(e) {
-                                console.log('execCommand'),
+                                
                                 console.log(e);
                             }
                     }
                     //_cleanWhitespace(iframe.contentWindow.document.body);
-                    console.log('setSelectedButton.formatText');
-                    console.log(getHtmlPath(iframe));
                     setSelectedButton(getCurrentNode(iframe));
                     resizeDoc($iframe);
                     //iframe.contentWindow.document.body.normalize();
@@ -1000,7 +975,7 @@
                             iframe.contentWindow.document.execCommand(listCommand, false, false);
                         } 
                         catch(e) {
-                            console.log('execCommand'),
+                            
                             console.log(e);
                         }
                         currentNode = getCurrentNode(iframe);
@@ -1024,7 +999,7 @@
                             iframe.contentWindow.document.execCommand(listCommand, false, false);
                         } 
                         catch(e) {
-                            console.log('execCommand'),
+                            
                             console.log(e);
                         }
                         currentNode = getCurrentNode(iframe);
