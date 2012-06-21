@@ -349,11 +349,9 @@
                     'insertUnorderedList',
                     'SP',
                     
-                    /*
                     'undo',
                     'redo',
                     'SP',
-                    */
                     
                     'createLink',
                     'unlink',
@@ -732,25 +730,34 @@
                 
                 var setSelectionElement = function(iframe, element, mode) {
                     var selection, range, node;
-                    var path = getHtmlPath(iframe);
+
                     if (iframe.contentWindow && typeof iframe.contentWindow.getSelection == 'function') {
-                        try {
-                            selectionExpanded = iframe.contentWindow.getSelection().selectAllChildren(path[0]);
-                            if (selectionExpanded && mode == 'block') {
-                                selection = selectionExpanded;
-                            } else {
-                                selection = iframe.contentWindow.getSelection();
+                        
+                        if (mode == 'block') {
+                            var path = getHtmlPath(iframe);
+                            try {
+                                selection = iframe.contentWindow.getSelection().selectAllChildren(path[0]);
                             }
+                            catch(e){
+                                console.log(e);
+                                return false;
+                            }
+                            return true;
+                        } 
+
+                        try {
+                            selection = iframe.contentWindow.getSelection();
                             range = selection.getRangeAt(0);
                             node = range.commonAncestorContainer;
                             element = iframe.contentWindow.document.createRange();
-                            range.selectNodeContents(element);
+                            range.selectNodeContents(node);
                             selection.addRange(range);
                         }
                         catch(e){
                             console.log(e);
                             return false;
                         }
+                        
                     } else if (iframe.contentWindow.document.selection) {
                         // IE 
                         selection = iframe.contentWindow.document.selection;
@@ -787,7 +794,7 @@
                 var formatText = function(iframe, command, args) {
                     iframe.contentWindow.focus();
                     if($.trim(_getSelectionString(iframe)).length == 0) {
-                        setSelectionElement( iframe, getSelectionElement(iframe), 'inline' );
+                        setSelectionElement( iframe, getSelectionElement(iframe), 'block' );
                     }
                     currentNode = getCurrentNode(iframe);
                     var currentNodeTagName = currentNode.tagName.toLowerCase();
@@ -804,7 +811,6 @@
                                 ) {
                                     return;
                                 }
-                                setSelectionElement( iframe, getSelectionElement(iframe), 'block' );
                                 if (
                                     currentNodeTagName != 'p' &&
                                     currentNodeTagName != 'div' &&
@@ -816,7 +822,6 @@
                     		break;
                     		
                     	case 'heading':
-                    	        setSelectionElement( iframe, getSelectionElement(iframe), 'block' );
                                 currentNode = resetList(iframe, currentNode);
                                 currentNodeTagName = currentNode.tagName.toLowerCase();
                                 if (
@@ -897,8 +902,6 @@
                     var data = $this.data('apRichTextEditor');
                     var $toolbar = data.$toolbar;
                     $toolbar.children('li').removeClass('selected');
-                    console.log(path[0]);
-                    
                     for (var i = 0; i < path.length; i++ ) {
                     	switch ( path[i].tagName.toLowerCase() ) {
                             case 'b':
