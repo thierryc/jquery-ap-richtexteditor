@@ -554,7 +554,7 @@
                     });
                     
                     $iframeDoc.bind('mouseup', function(event) {
-                        setSelectedButton(getCurrentNode(iframe));
+                        setSelectedButton(getHtmlPath(iframe));
                     });
                     
                     $iframeDoc.bind('keydown', function(event) {
@@ -602,20 +602,13 @@
                         if (!event.ctrlKey) {
                             switch ( key ) {
                                 case 13:
-                                    /*
-                                    if (currentTagName == 'div') {
-                                        iframeDoc.execCommand('formatBlock', false, 'p');
-                                        currentTagName = getCurrentNode(iframe).tagName.toLowerCase();
-                                    }
-                                    */
                                     if (data.settings.nextTagRules[currentTagName]) {
                                         iframeDoc.execCommand('formatBlock', false, data.settings.nextTagRules[currentTagName]);
                                     }
-                                    //resizeDoc($iframe);
                                     break;
                             }
                         }
-                        setSelectedButton(getCurrentNode(iframe));
+                        setSelectedButton(getHtmlPath(iframe));
                         $this.trigger('apRichTextEditor.keyup', [iframe]);
                     });
                     
@@ -633,9 +626,7 @@
                         $bt.addClass('apRichTextEditorButton')
                             .addClass(item.label + 'Bt')
                             .click( function(event) {
-                                
                                 clearTimeout(toolbarHideTimer);
-                                
                                 var data = $(this).data('apRichTextEditorButton');
                                 $this.trigger('apRichTextEditor.execCommand',['before',data]);
                                 formatText(data.selectedInstance, data.action, data.args);
@@ -835,56 +826,17 @@
                     }
                     return node;
                  }
-                 
-                 var _cleanUpHtmlPath = function(iframe) {
-                    var path = getHtmlPath(iframe);
-                    /*
-                    var isParagraph = false;
-                    for ( i = 0; i < path.length; i++ ) {
-                        
-                        if (isParagraph) {
-                            for ( j = 0; j < prohibitedParagraphChildNames.length; j++ ) {
-                                if (prohibitedParagraphChildNames[j] == path[i].tagName.toLowerCase()) {
-                                    console.log(path[i].tagName);
-                                    //setSelectionElement( iframe, getSelectionElement(iframe) );
-                                    iframe.contentWindow.document.execCommand('formatBlock', false, 'div');
-                                }
-                            }
-                        }
-                        
-                        for ( j = 0; j < paragraphTagNames.length; j++ ) {
-                        	if (paragraphTagNames[j] == path[i].tagName.toLowerCase()) {
-                        	    isParagraph = true;
-                        	}
-                        }
-                        
-                        
-                    
-                        console.log(path[i].tagName);
-                    }
-                    */
-                            
-                }
-                
-                var _cleanUpText = function(iframe){
-                }
-                
-                var _cleanWhitespace = function (node){
-                    return node;
-                }
                 
                 var formatText = function(iframe, command, args) {
                     iframe.contentWindow.focus();
                     if($.trim(_getSelectionString(iframe)).length == 0) {
-                        //setSelectionElement( iframe, getSelectionElement(iframe) );
                         setExpandSelectionElement( iframe, getSelectionElement(iframe) );
-                    }             
+                    }
                     currentNode = getCurrentNode(iframe);
                     var currentNodeTagName = currentNode.tagName.toLowerCase();
                     switch ( command ) {
                     	case 'normalize':
                     		    iframe.contentWindow.document.body.normalize();
-                    		    _cleanWhitespace(iframe.contentWindow.document.body);
                     		break;
                     		
                     	case 'insertOrderedList':
@@ -952,10 +904,8 @@
                                 console.log(e);
                             }
                     }
-                    //_cleanWhitespace(iframe.contentWindow.document.body);
-                    setSelectedButton(getCurrentNode(iframe));
+                    setSelectedButton(getHtmlPath(iframe));
                     resizeDoc($iframe);
-                    //iframe.contentWindow.document.body.normalize();
                 };
                 
                 var _resetList = function (iframe, currentNode) {
@@ -1009,56 +959,46 @@
                     return currentNode;
                 }
                 
-                var setSelectedButton = function (currentNode) {
+                var setSelectedButton = function (path) {
                     $toolbar.children('li').removeClass('selected');
-                    switch ( currentNode.tagName.toLowerCase() ) {
-                    	case 'b':
-                    		$toolbar.children('.boldBt').addClass('selected');
-                    		break;
-                    	case 'i':
-                    		$toolbar.children('.italicBt').addClass('selected');
-                    		break;
-                    	case 'p':
-                    		$toolbar.children('.paragraphBt').addClass('selected');
-                    		break;
-                    		break;
-                    	case 'h1':
-                    		$toolbar.children('.H1Bt').addClass('selected');
-                    		break;
-                    	case 'h2':
-                    		$toolbar.children('.H2Bt').addClass('selected');
-                    		break;
-                    	case 'h3':
-                    		$toolbar.children('.H3Bt').addClass('selected');
-                    		break;
-                    	case 'h4':
-                    		$toolbar.children('.H4Bt').addClass('selected');
-                    		break;
-                    	case 'blockcote':
-                    		
-                    		break;
-                    	case 'li':
-                    	    var parentTag = $(currentNode).parent().get(0);
-                            switch ( parentTag.tagName.toLowerCase() ) {
-                                case 'ul':
-                                    // 'insertUnorderedList';
-                                    $toolbar.children('.insertUnorderedListBt').addClass('selected');
-                                    break;
-                                case 'ol':
-                                    // 'insertOrderedList';
-                                    $toolbar.children('.insertOrderedListBt').addClass('selected');
-                                    break;
-                                default:
-                                    return;
-                            }
-                    		break;
-                    	default:
-                    	    return false;
+                    for (var i = 0; i < path.length; i++ ) {
+                        console.log(path[i]);
+                    	switch ( path[i] ) {
+                            case 'b':
+                                $toolbar.children('.boldBt').addClass('selected');
+                                break;
+                            case 'i':
+                                $toolbar.children('.italicBt').addClass('selected');
+                                break;
+                            case 'p':
+                                $toolbar.children('.paragraphBt').addClass('selected');
+                                break;
+                                break;
+                            case 'h1':
+                                $toolbar.children('.H1Bt').addClass('selected');
+                                break;
+                            case 'h2':
+                                $toolbar.children('.H2Bt').addClass('selected');
+                                break;
+                            case 'h3':
+                                $toolbar.children('.H3Bt').addClass('selected');
+                                break;
+                            case 'h4':
+                                $toolbar.children('.H4Bt').addClass('selected');
+                                break;
+                            case 'blockcote':
+                                
+                                break;
+                            case 'ol':
+                                $toolbar.children('.insertOrderedListBt').addClass('selected');
+                                break;
+                            case 'ul':
+                                $toolbar.children('.insertUnorderedListBt').addClass('selected');
+                                break;
+                        }
                     }
                 }
-                // enableApRichTextEditor($this);
                 setTimeout(function(){ enableApRichTextEditor($this) }, 500);
-                
             });
         },
         disable: function(options) {
