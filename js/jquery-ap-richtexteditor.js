@@ -786,8 +786,12 @@
                     var selection, range, node;
                     if (iframe.contentWindow && typeof iframe.contentWindow.getSelection == 'function') {
                         try {
-                            selection = iframe.contentWindow.getSelection().selectAllChildren(path[0]);
-                            if (selection) {
+                            console.log(iframe.contentWindow.getSelection());
+                            console.log(iframe.contentWindow.getSelection().selectAllChildren(path[0]));
+                            
+                            selectionExpanded = iframe.contentWindow.getSelection().selectAllChildren(path[0]);
+                            
+                            if (selectionExpanded) {
                                 range = selection.getRangeAt(0);
                                 node = range.commonAncestorContainer;
                                 element = iframe.contentWindow.document.createRange();
