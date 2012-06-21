@@ -349,9 +349,11 @@
                     'insertUnorderedList',
                     'SP',
                     
+                    /*
                     'undo',
                     'redo',
                     'SP',
+                    */
                     
                     'createLink',
                     'unlink',
@@ -489,7 +491,6 @@
                         case 'textarea':
                             var content = $this.val();
                             break;
-                        
                         default:
                         case 'div':
                             var content = $this.html();
@@ -605,7 +606,6 @@
                         $this.trigger('apRichTextEditor.keyup', [iframe]);
                     });
                     
-                    
                     for (i = 0; i < data.settings.buttonsList.length; i++) {
                         if (data.settings.buttonsList[i] == 'SP') {
                             var $sp = $('<li/>').html('&nbsp;').addClass('apRichTextEditorSp');
@@ -613,7 +613,6 @@
                             continue;
                         }
                         var item = data.settings.buttons[data.settings.buttonsList[i] ];
-                        item.selectedInstance = $iframe.get(0);
                         var $bt = $('<li/>');
                         $bt.data('apRichTextEditorButton', item);
                         $bt.addClass('apRichTextEditorButton')
@@ -621,9 +620,9 @@
                             .click( function(event) {
                                 clearTimeout(toolbarHideTimer);
                                 var data = $(this).data('apRichTextEditorButton');
-                                $this.trigger('apRichTextEditor.execCommand',['before',data]);
-                                formatText(data.selectedInstance, data.action, data.args);
-                                $this.trigger('apRichTextEditor.execCommand',['after', data]);
+                                $this.trigger('apRichTextEditor.execCommand',['before', iframe, data]);
+                                formatText(iframe, data.action, data.args);
+                                $this.trigger('apRichTextEditor.execCommand',['after', iframe, data]);
                             }).attr('title', item.label);
                         var $btSpan = $('<span/>').html(item.label);
                         $bt.append($btSpan);
@@ -731,57 +730,22 @@
                 
                 */
                 
-                var setSelectionElement = function(iframe, element) {
+                var setSelectionElement = function(iframe, element, mode) {
                     var selection, range, node;
+                    var path = getHtmlPath(iframe);
                     if (iframe.contentWindow && typeof iframe.contentWindow.getSelection == 'function') {
                         try {
-                            selection = iframe.contentWindow.getSelection();
-                            selection.removeAllRanges();
-                            range = iframe.contentWindow.document.createRange();
+                            selectionExpanded = iframe.contentWindow.getSelection().selectAllChildren(path[0]);
+                            if (selectionExpanded && mode == 'block') {
+                                selection = selectionExpanded;
+                            } else {
+                                selection = iframe.contentWindow.getSelection();
+                            }
+                            range = selection.getRangeAt(0);
+                            node = range.commonAncestorContainer;
+                            element = iframe.contentWindow.document.createRange();
                             range.selectNodeContents(element);
                             selection.addRange(range);
-                        }
-                        catch(e){
-                            return false;
-                        }
-                        
-                    } else if (iframe.contentWindow.document.selection) {
-                        // IE 
-                        selection = iframe.contentWindow.document.selection;
-                        range = iframe.contentWindow.document.body.createTextRange();
-                        range.moveToElementText(element);
-                        range.select();
-                        
-                    } else {
-                        return false;
-                    }
-                    return true;
-                }
-                
-                var setExpandSelectionElement = function(iframe, element) {
-                    var node = getSelectionElement(iframe);
-                    var path = Array();
-                    while (node.nodeType != 1 || node.tagName.toLowerCase() != 'body') {
-                        node = $(node).parent().get(0);
-                        if (node.nodeType == 1 && node.tagName.toLowerCase() != 'body') {
-                            path.unshift(node);
-                        }
-                    }
-                    var selection, range, node;
-                    if (iframe.contentWindow && typeof iframe.contentWindow.getSelection == 'function') {
-                        try {
-                            console.log(iframe.contentWindow.getSelection());
-                            console.log(iframe.contentWindow.getSelection().selectAllChildren(path[0]));
-                            
-                            selectionExpanded = iframe.contentWindow.getSelection().selectAllChildren(path[0]);
-                            
-                            if (selectionExpanded) {
-                                range = selection.getRangeAt(0);
-                                node = range.commonAncestorContainer;
-                                element = iframe.contentWindow.document.createRange();
-                                range.selectNodeContents(element);
-                                selection.addRange(range);
-                            } else return false;
                         }
                         catch(e){
                             console.log(e);
@@ -806,13 +770,13 @@
                     while (node.nodeType != 1 || node.tagName.toLowerCase() != 'body') {
                         node = $(node).parent().get(0);
                         if (node.nodeType == 1 && node.tagName.toLowerCase() != 'body') {
-                            path.unshift(node.tagName.toLowerCase());
+                            path.unshift(node);
                         }
                     }
                     return path;
                  }
                  
-                 var getCurrentNode = function(iframe){
+                var getCurrentNode = function(iframe){
                     var node = getSelectionElement(iframe);
                     while (node.nodeType == 3){
                         node = $(node).parent().get(0);
@@ -823,7 +787,7 @@
                 var formatText = function(iframe, command, args) {
                     iframe.contentWindow.focus();
                     if($.trim(_getSelectionString(iframe)).length == 0) {
-                        setExpandSelectionElement( iframe, getSelectionElement(iframe) );
+                        setSelectionElement( iframe, getSelectionElement(iframe), 'inline' );
                     }
                     currentNode = getCurrentNode(iframe);
                     var currentNodeTagName = currentNode.tagName.toLowerCase();
@@ -840,7 +804,7 @@
                                 ) {
                                     return;
                                 }
-                                
+                                setSelectionElement( iframe, getSelectionElement(iframe), 'block' );
                                 if (
                                     currentNodeTagName != 'p' &&
                                     currentNodeTagName != 'div' &&
@@ -852,7 +816,8 @@
                     		break;
                     		
                     	case 'heading':
-                                currentNode = _resetList(iframe, currentNode);
+                    	        setSelectionElement( iframe, getSelectionElement(iframe), 'block' );
+                                currentNode = resetList(iframe, currentNode);
                                 currentNodeTagName = currentNode.tagName.toLowerCase();
                                 if (
                                     currentNodeTagName == 'p' ||
@@ -875,7 +840,7 @@
                     		break;
                     		
                     	case 'formatBlock':
-                    	        currentNode = _resetList(iframe, currentNode);
+                    	        currentNode = resetList(iframe, currentNode);
                     	        currentNodeTagName = currentNode.tagName.toLowerCase();
                                 iframe.contentWindow.document.execCommand(command, false, args);
                                 try {
@@ -886,8 +851,7 @@
                                     console.log(e);
                                 }
                     		break;
-                    	
-                    	
+
                     	default:
                     		try {
                                 iframe.contentWindow.document.execCommand(command, false, args);
@@ -901,7 +865,8 @@
                     resizeDoc($iframe);
                 };
                 
-                var _resetList = function (iframe, currentNode) {
+                var resetList = function (iframe, currentNode) {
+                    /* todo USE  Path to reset list items */
                     var currentNodeTagName = currentNode.tagName.toLowerCase();
                 	while (currentNodeTagName == 'li') {
                         var parentTag = $(currentNode).parent().get(0);
@@ -928,35 +893,14 @@
                     return currentNode;
                 }
                 
-                var _resetInline = function (iframe, currentNode) {
-                    var currentNodeTagName = currentNode.tagName.toLowerCase();
-                	while (currentNodeTagName == 'b' || currentNodeTagName == 'i' ) {
-                        switch ( currentNodeTagName ) {
-                            case 'b':
-                                var listCommand = 'bold';
-                                break;
-                            case 'i':
-                                var listCommand = 'italic';
-                                break;
-                        }
-                        try {
-                            iframe.contentWindow.document.execCommand(listCommand, false, false);
-                        } 
-                        catch(e) {
-                            
-                            console.log(e);
-                        }
-                        currentNode = getCurrentNode(iframe);
-                        currentNodeTagName = currentNode.tagName.toLowerCase();
-                    }
-                    return currentNode;
-                }
-                
                 var setSelectedButton = function (path) {
+                    var data = $this.data('apRichTextEditor');
+                    var $toolbar = data.$toolbar;
                     $toolbar.children('li').removeClass('selected');
+                    console.log(path[0]);
+                    
                     for (var i = 0; i < path.length; i++ ) {
-                        console.log(path[i]);
-                    	switch ( path[i] ) {
+                    	switch ( path[i].tagName.toLowerCase() ) {
                             case 'b':
                                 $toolbar.children('.boldBt').addClass('selected');
                                 break;
@@ -994,7 +938,7 @@
                 setTimeout(function(){ enableApRichTextEditor($this) }, 500);
             });
         },
-        disable: function(options) {
+        save: function(options) {
             return this.each(function() {
                 $(this).apRichTextEditor('init', options);
                 var data = $(this).data('apRichTextEditor');
@@ -1015,14 +959,6 @@
                 }
                 data.$iframe.remove();
             }); 
-        },
-        normalize: function(options) {
-            return this.each(function() {
-                var data = $(this).data('apRichTextEditor');
-                if(!data) return;
-                var iframe = data.$iframe.get(0);
-                iframe.contentWindow.document.body.normalize();
-            });
         }
     }   
     
