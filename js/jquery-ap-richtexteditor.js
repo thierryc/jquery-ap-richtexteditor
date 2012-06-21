@@ -532,7 +532,11 @@
                     }
                 
                     var currentNode = false;
-                    resizeDoc($iframe);
+                    resizeDoc($iframe, 24);
+                    
+                    $(window).resize(function(event) {
+                        resizeDoc($iframe, 24);
+                    });
                     
                     $(getWin(iframe)).bind('blur', function(event) {
                         toolbarHideTimer = setTimeout(function(){
@@ -556,7 +560,7 @@
                             switch ( key ) {
                                 case 13:
                                     currentNode = getCurrentNode(iframe);
-                                    $iframe.css('height', parseInt( $iframeDoc.height() + 48 ));
+                                    $iframe.css('height', $iframeDoc.height() + 48);
                                     if (currentNode.tagName.toLowerCase() == 'div') {
                                         iframeDoc.execCommand('formatBlock', false, 'p');
                                     }
@@ -601,6 +605,7 @@
                             }
                         }
                         setSelectedButton(getHtmlPath(iframe));
+                        resizeDoc($iframe, 24);
                         $this.trigger('apRichTextEditor.keyup', [iframe]);
                     });
                     
@@ -633,15 +638,22 @@
                     $this.trigger('apRichTextEditor.ready', [data]);
                 };
                 
-                var resizeDoc = function($iframe){
+                var resizeDoc = function($iframe, extra){
                     if (data.settings.autoResize) {
-                        var iframe = $iframe.get(0);
-                        var $iframeDoc = $(getDoc(iframe));
-                        /* if IE */
                         setTimeout(function(){
+                            var iframe = $iframe.get(0);
+                            var $iframeDoc = $(getDoc(iframe));
+                            var children = $iframeDoc.find('body').children();
+                            var lastChildOffset = $(children[children.length-1]).offset();
+                            if (lastChildOffset) {
+                                var height = lastChildOffset.top + $(children[children.length-1]).outerHeight();
+                            } else {
+                                var height = $(children[children.length-1]).outerHeight();
+                            }
+                            
                             $iframe.animate({
-                                height: parseInt( $iframeDoc.height() )
-                            }, 150);
+                                height: parseInt( height + extra)
+                            }, 100);
                         },150);
                     }
                 }
@@ -867,7 +879,7 @@
                             }
                     }
                     setSelectedButton(getHtmlPath(iframe));
-                    resizeDoc($iframe);
+                    resizeDoc($iframe, 24);
                 };
                 
                 var resetList = function (iframe, currentNode) {

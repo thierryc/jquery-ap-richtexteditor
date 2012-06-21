@@ -9,7 +9,6 @@
 
 .apRichTextEditor {
 	position: relative;
-	background-color: #f4f4f4;
 }
 
 .apRichTextEditor iframe {
@@ -21,6 +20,7 @@
 	padding: 0;
 }
 
+/*
 ul.apRichTextEditorToolbar {
 	position: absolute;
 	top: -38px;
@@ -30,6 +30,19 @@ ul.apRichTextEditorToolbar {
 	margin: 0;
 	padding: 0 3px;
 	background: url(../image/tools-bt.png) repeat-x 0 -256px;
+}
+*/
+
+ul.apRichTextEditorToolbar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	list-style: none;
+	height: 38px;
+	margin: 0;
+	padding: 0 3px;
+	background: url(../image/tools-bt.png) repeat-x 0 -256px;
+	width: 100%;
 }
 
 li.apRichTextEditorButton {
