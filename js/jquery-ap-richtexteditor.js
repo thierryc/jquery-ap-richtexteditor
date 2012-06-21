@@ -460,7 +460,7 @@
                 $editorDiv.insertAfter($this).append($iframe);
                 $this.hide();
                 
-                var $toolbar = $('<ul/>').addClass('apRichTextEditorToolbar');
+                var $toolbar = $('<ul/>').addClass('apRichTextEditorToolbar').css('display', 'none');
                 var toolbarHideTimer = false;
                 
                 data = $.extend({
@@ -564,7 +564,7 @@
                             switch ( key ) {
                                 case 13:
                                     currentNode = getCurrentNode(iframe);
-                                    resizeDoc($iframe);
+                                    $iframe.css('height', parseInt( $iframeDoc.height() + 48 ));
                                     if (currentNode.tagName.toLowerCase() == 'div') {
                                         iframeDoc.execCommand('formatBlock', false, 'p');
                                     }
@@ -658,16 +658,12 @@
                         var $iframeDoc = $(getDoc(iframe));
                         /* if IE */
                         setTimeout(function(){
-                            var height = $iframeDoc.height();
-                            /*
                             $iframe.animate({
-                                height: parseInt( height )
+                                height: parseInt( $iframeDoc.height() )
                             }, 150);
-                            */
-                            $iframe.css('height', parseInt( height + 25 ));
                         },150);
                     }
-                } 
+                }
                 
                 var _getSelectionRange = function(iframe) {
                     if (iframe.contentWindow && typeof iframe.contentWindow.getSelection == 'function') {
@@ -791,17 +787,18 @@
                     if (iframe.contentWindow && typeof iframe.contentWindow.getSelection == 'function') {
                         try {
                             selection = iframe.contentWindow.getSelection().selectAllChildren(path[0]);
-                            range = selection.getRangeAt(0);
-                            node = range.commonAncestorContainer;
-                            element = iframe.contentWindow.document.createRange();
-                            range.selectNodeContents(element);
-                            selection.addRange(range);
+                            if (selection) {
+                                range = selection.getRangeAt(0);
+                                node = range.commonAncestorContainer;
+                                element = iframe.contentWindow.document.createRange();
+                                range.selectNodeContents(element);
+                                selection.addRange(range);
+                            } else return false;
                         }
                         catch(e){
                             console.log(e);
                             return false;
                         }
-                        
                     } else if (iframe.contentWindow.document.selection) {
                         // IE 
                         selection = iframe.contentWindow.document.selection;
