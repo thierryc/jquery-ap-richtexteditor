@@ -320,6 +320,13 @@
                         label: 'normalize',
                         action: 'normalize',
                         args: false
+                    },
+                    styliseBlockquote: //Replaces the useCSS command; argument works as expected, i.e. true modifies/generates style attributes in markup, false generates formatting elements.
+                    {
+                        label: 'Stylise Blockquote',
+                        action: 'formatBlock',
+                        args: 'blockquote',
+                        addClass: 'toto'
                     }
                 },
                 buttonsList: [
@@ -371,6 +378,8 @@
                     
                     //'insertBrOnReturn',
                     //'insertBrOnReturnOff',
+                    
+                    , 'styliseBlockquote'
                     
                 ],
                 buttonsOptionsList: {
@@ -448,7 +457,8 @@
                 var $iframe = $('<iframe/>');
                 $iframe.attr('frameborder', 0).attr('framemargin', 0).attr('framepadding', 0).addClass('apRichTextEditorIframe');
             
-                $iframe.height($this.height());
+                //$iframe.height($this.height());
+                $iframe.get(0).height = $this.height() + 'px';
                 $iframe.width('100%');
                 $editorDiv.insertAfter($this).append($iframe);
                 $this.hide();
@@ -467,19 +477,7 @@
                     throw new Error('create iframe error)');
                     return false;
                 }
-                
-                var getDoc = function(iframe){
-                    if (iframe.contentDocument) return iframe.contentDocument;
-                    else if (iframe.contentWindow && iframe.contentWindow.document) return iframe.contentWindow.document;
-                    else if (iframe.document) return iframe.document;
-                    else return null;        
-                }
-                
-                var getWin = function(iframe){
-                    if (iframe.contentWindow) return iframe.contentWindow;
-                    else return null;        
-                }
-                
+
                 var enableApRichTextEditor = function($this) {
                     var data = $this.data('apRichTextEditor');
                     var $iframe = data.$iframe;
@@ -498,7 +496,7 @@
                     var doc = '<html><head>'+css+'</head><body class="apRichTextEditorBody"></body></html>';
                             
                     var iframe = $iframe.get(0);
-                    var iframeDoc = getDoc(iframe);
+                    var iframeDoc = _tools.getDoc(iframe);
                     
                     try {
                         iframeDoc.open();
@@ -532,25 +530,25 @@
                     }
                 
                     var currentNode = false;
-                    resizeDoc($iframe, 24);
+                    _tools.resizeDoc(data, $iframe, 24);
                     
                     $(window).resize(function(event) {
-                        resizeDoc($iframe, 24);
+                        _tools.resizeDoc(data, $iframe, 24);
                     });
                     
-                    $(getWin(iframe)).bind('blur', function(event) {
+                    $(_tools.getWin(iframe)).bind('blur', function(event) {
                         toolbarHideTimer = setTimeout(function(){
                              $toolbar.fadeOut('slow');
                         }, 150);
                     });
                     
-                    $(getWin(iframe)).bind('focus', function(event) {
+                    $(_tools.getWin(iframe)).bind('focus', function(event) {
                         clearTimeout(toolbarHideTimer);
                         $toolbar.fadeIn();
                     });
                     
                     $iframeDoc.bind('mouseup', function(event) {
-                        setSelectedButton(getHtmlPath(iframe));
+                        _tools.setSelectedButton($this, _tools.getHtmlPath(iframe));
                     });
                     
                     $iframeDoc.bind('keydown', function(event) {
@@ -559,8 +557,9 @@
                         if (!event.ctrlKey) {
                             switch ( key ) {
                                 case 13:
-                                    currentNode = getCurrentNode(iframe);
-                                    $iframe.css('height', $iframeDoc.height() + 48);
+                                    currentNode = _tools.getCurrentNode(iframe);
+                                    _tools.resizeDoc(data, $iframe, 48);
+                                    //$iframe.css('height', $iframeDoc.height() + 48);
                                     if (currentNode.tagName.toLowerCase() == 'div') {
                                         iframeDoc.execCommand('formatBlock', false, 'p');
                                     }
@@ -604,8 +603,8 @@
                                     break;
                             }
                         }
-                        setSelectedButton(getHtmlPath(iframe));
-                        resizeDoc($iframe, 24);
+                        _tools.setSelectedButton($this, _tools.getHtmlPath(iframe));
+                        _tools.resizeDoc(data, $iframe, 24);
                         $this.trigger('apRichTextEditor.keyup', [iframe]);
                     });
                     
@@ -624,7 +623,22 @@
                                 clearTimeout(toolbarHideTimer);
                                 var data = $(this).data('apRichTextEditorButton');
                                 $this.trigger('apRichTextEditor.execCommand',['before', iframe, data]);
-                                formatText(iframe, data.action, data.args);
+                                var node = _tools.formatText($this, iframe, data.action, data.args);
+                                /*
+                                if(data.ieAction){
+                                    
+                                }
+                                */
+                                if(data.addClass && data.addClass != ''){
+                                    if($(node).hasClass(data.addClass)) {
+                                        $(node).removeClass(data.addClass);
+                                    } else {
+                                        $(node).addClass(data.addClass);
+                                    }
+                                    
+                                } else {
+                                    $(node).removeClass('');
+                                }
                                 $this.trigger('apRichTextEditor.execCommand',['after', iframe, data]);
                             }).attr('title', item.label);
                         var $btSpan = $('<span/>').html(item.label);
@@ -638,318 +652,6 @@
                     $this.trigger('apRichTextEditor.ready', [data]);
                 };
                 
-                var resizeDoc = function($iframe, extra){
-                    if (data.settings.autoResize) {
-                        setTimeout(function(){
-                            var iframe = $iframe.get(0);
-                            var $iframeDoc = $(getDoc(iframe));
-                            var children = $iframeDoc.find('body').children();
-                            var lastChildOffset = $(children[children.length-1]).offset();
-                            if (lastChildOffset) {
-                                var height = lastChildOffset.top + $(children[children.length-1]).outerHeight();
-                            } else {
-                                var height = $(children[children.length-1]).outerHeight();
-                            }
-                            
-                            $iframe.animate({
-                                height: parseInt( height + extra)
-                            }, 100);
-                        },150);
-                    }
-                }
-                
-                var _getSelectionRange = function(iframe) {
-                    if (iframe.contentWindow && typeof iframe.contentWindow.getSelection == 'function') {
-                        try {
-                            selection = iframe.contentWindow.getSelection();
-                            range = selection.getRangeAt(0);
-                        }
-                        catch(e){
-                            return false;
-                        }
-                    } else if (iframe.contentWindow.document.selection) {
-                        // IE 
-                        // alert(iframe.contentWindow.document.selection);
-                        selection = iframe.contentWindow.document.selection;
-                        range = selection.createRange();
-                    } else {
-                        return false;
-                    }
-                    return { selection : selection, range: range };
-                };
-                
-                var _getSelectionString = function(iframe) {
-                    var selection, node;
-                    if (iframe.contentWindow && typeof iframe.contentWindow.getSelection == 'function') {
-                        try {
-                            selection = iframe.contentWindow.getSelection().toString();
-                        }
-                        catch(e){
-                            return false;
-                        }
-                    } else if (iframe.contentWindow.document.selection) {
-                        // IE 
-                        selection = iframe.contentWindow.document.selection.createRange().text;
-                    } else {
-                        return false;
-                    }
-                    return selection;
-                };
-                
-                var getSelectionElement = function(iframe) {
-                    var selection, range, node;
-                    if (iframe.contentWindow && typeof iframe.contentWindow.getSelection == 'function') {
-                        try {
-                            selection = iframe.contentWindow.getSelection();
-                            range = selection.getRangeAt(0);
-                        }
-                        catch(e){
-                            return false;
-                        }
-                        node = range.commonAncestorContainer;
-                    } else if (iframe.contentWindow && iframe.contentWindow.document.selection) {
-                        // IE 
-                        selection = iframe.contentWindow.document.selection;
-                        range = selection.createRange();
-                        try {
-                            node = range.parentElement();
-                        }
-                        catch (e) {
-                            return false;
-                        }
-                    } else {
-                        return false;
-                    }
-                    return node;
-                };
-                
-                /*
-                
-                    1	ELEMENT_NODE
-                    2	ATTRIBUTE_NODE
-                    3	TEXT_NODE
-                    4	CDATA_SECTION_NODE
-                    5	ENTITY_REFERENCE_NODE
-                    6	ENTITY_NODE
-                    7	PROCESSING_INSTRUCTION_NODE
-                    8	COMMENT_NODE
-                    9	DOCUMENT_NODE
-                    10	DOCUMENT_TYPE_NODE
-                    11	DOCUMENT_FRAGMENT_NODE
-                    12`	NOTATION_NODE
-                
-                */
-                
-                var setSelectionElement = function(iframe, element, mode) {
-                    var selection, range, node;
-
-                    if (iframe.contentWindow && typeof iframe.contentWindow.getSelection == 'function') {
-                        
-                        if (mode == 'block') {
-                            var path = getHtmlPath(iframe);
-                            try {
-                                selection = iframe.contentWindow.getSelection().selectAllChildren(path[0]);
-                            }
-                            catch(e){
-                                console.log(e);
-                                return false;
-                            }
-                            return true;
-                        } 
-
-                        try {
-                            selection = iframe.contentWindow.getSelection();
-                            range = selection.getRangeAt(0);
-                            node = range.commonAncestorContainer;
-                            element = iframe.contentWindow.document.createRange();
-                            range.selectNodeContents(node);
-                            selection.addRange(range);
-                        }
-                        catch(e){
-                            console.log(e);
-                            return false;
-                        }
-                        
-                    } else if (iframe.contentWindow.document.selection) {
-                        // IE 
-                        selection = iframe.contentWindow.document.selection;
-                        range = iframe.contentWindow.document.body.createTextRange();
-                        range.moveToElementText(element);
-                        range.select();
-                        
-                    } else {
-                        return false;
-                    }
-                    return true;
-                }
-                
-                var getHtmlPath = function(iframe) {
-                    var path = [];
-                    var node = getSelectionElement(iframe);
-                    while (node.nodeType != 1 || node.tagName.toLowerCase() != 'body') {
-                        node = $(node).parent().get(0);
-                        if (node.nodeType == 1 && node.tagName.toLowerCase() != 'body') {
-                            path.unshift(node);
-                        }
-                    }
-                    return path;
-                 }
-                 
-                var getCurrentNode = function(iframe){
-                    var node = getSelectionElement(iframe);
-                    while (node.nodeType == 3){
-                        node = $(node).parent().get(0);
-                    }
-                    return node;
-                 }
-                
-                var formatText = function(iframe, command, args) {
-                    iframe.contentWindow.focus();
-                    if($.trim(_getSelectionString(iframe)).length == 0) {
-                        setSelectionElement( iframe, getSelectionElement(iframe), 'block' );
-                    }
-                    currentNode = getCurrentNode(iframe);
-                    var currentNodeTagName = currentNode.tagName.toLowerCase();
-                    switch ( command ) {
-                    	case 'normalize':
-                    		    iframe.contentWindow.document.body.normalize();
-                    		break;
-                    		
-                    	case 'insertOrderedList':
-                    	case 'insertUnorderedList':
-                                if (
-                                    currentNodeTagName == 'ul' ||
-                                    currentNodeTagName == 'ol'
-                                ) {
-                                    return;
-                                }
-                                if (
-                                    currentNodeTagName != 'p' &&
-                                    currentNodeTagName != 'div' &&
-                                    currentNodeTagName != 'li'
-                                ) {
-                                    iframe.contentWindow.document.execCommand('formatBlock', false, 'p');
-                                }
-                                iframe.contentWindow.document.execCommand(command, false, args);
-                    		break;
-                    		
-                    	case 'heading':
-                                currentNode = resetList(iframe, currentNode);
-                                currentNodeTagName = currentNode.tagName.toLowerCase();
-                                if (
-                                    currentNodeTagName == 'p' ||
-                                    currentNodeTagName == 'div' ||
-                                    currentNodeTagName == 'h1' ||
-                                    currentNodeTagName == 'h2' ||
-                                    currentNodeTagName == 'h3' ||
-                                    currentNodeTagName == 'h4' ||
-                                    currentNodeTagName == 'h5' ||
-                                    currentNodeTagName == 'h6'
-                                ) {
-                                    try {
-                                        iframe.contentWindow.document.execCommand('formatBlock', false, args);
-                                    } 
-                                    catch(e) {
-                                        
-                                        console.log(e);
-                                    }
-                                }
-                    		break;
-                    		
-                    	case 'formatBlock':
-                    	        currentNode = resetList(iframe, currentNode);
-                    	        currentNodeTagName = currentNode.tagName.toLowerCase();
-                                iframe.contentWindow.document.execCommand(command, false, args);
-                                try {
-                                    iframe.contentWindow.document.execCommand(command, false, args);
-                                } 
-                                catch(e) {
-                                    
-                                    console.log(e);
-                                }
-                    		break;
-
-                    	default:
-                    		try {
-                                iframe.contentWindow.document.execCommand(command, false, args);
-                            } 
-                            catch(e) {
-                                
-                                console.log(e);
-                            }
-                    }
-                    setSelectedButton(getHtmlPath(iframe));
-                    resizeDoc($iframe, 24);
-                };
-                
-                var resetList = function (iframe, currentNode) {
-                    /* todo USE  Path to reset list items */
-                    var currentNodeTagName = currentNode.tagName.toLowerCase();
-                	while (currentNodeTagName == 'li') {
-                        var parentTag = $(currentNode).parent().get(0);
-                        switch ( parentTag.tagName.toLowerCase() ) {
-                            case 'ul':
-                                var listCommand = 'insertUnorderedList';
-                                break;
-                            case 'ol':
-                                var listCommand = 'insertOrderedList';
-                                break;
-                            default:
-                                return currentNode;
-                        }
-                        try {
-                            iframe.contentWindow.document.execCommand(listCommand, false, false);
-                        } 
-                        catch(e) {
-                            
-                            console.log(e);
-                        }
-                        currentNode = getCurrentNode(iframe);
-                        currentNodeTagName = currentNode.tagName.toLowerCase();
-                    }
-                    return currentNode;
-                }
-                
-                var setSelectedButton = function (path) {
-                    var data = $this.data('apRichTextEditor');
-                    var $toolbar = data.$toolbar;
-                    $toolbar.children('li').removeClass('selected');
-                    for (var i = 0; i < path.length; i++ ) {
-                    	switch ( path[i].tagName.toLowerCase() ) {
-                            case 'b':
-                                $toolbar.children('.boldBt').addClass('selected');
-                                break;
-                            case 'i':
-                                $toolbar.children('.italicBt').addClass('selected');
-                                break;
-                            case 'p':
-                                $toolbar.children('.paragraphBt').addClass('selected');
-                                break;
-                                break;
-                            case 'h1':
-                                $toolbar.children('.H1Bt').addClass('selected');
-                                break;
-                            case 'h2':
-                                $toolbar.children('.H2Bt').addClass('selected');
-                                break;
-                            case 'h3':
-                                $toolbar.children('.H3Bt').addClass('selected');
-                                break;
-                            case 'h4':
-                                $toolbar.children('.H4Bt').addClass('selected');
-                                break;
-                            case 'blockcote':
-                                
-                                break;
-                            case 'ol':
-                                $toolbar.children('.insertOrderedListBt').addClass('selected');
-                                break;
-                            case 'ul':
-                                $toolbar.children('.insertUnorderedListBt').addClass('selected');
-                                break;
-                        }
-                    }
-                }
                 setTimeout(function(){ enableApRichTextEditor($this) }, 500);
             });
         },
@@ -976,6 +678,362 @@
             }); 
         }
     }   
+    
+    var _tools = {
+    
+        getDoc: function(iframe){
+            if (iframe.contentDocument) return iframe.contentDocument;
+            else if (iframe.contentWindow && iframe.contentWindow.document) return iframe.contentWindow.document;
+            else if (iframe.document) return iframe.document;
+            else return null;        
+        },
+                
+        getWin: function(iframe){
+            if (iframe.contentWindow) return iframe.contentWindow;
+            else return null;        
+        },
+    
+        resizeDoc: function(data, $iframe, extra){
+            /* bug firefox */
+            if (data.settings.autoResize) {
+                setTimeout(function(){
+                    var iframe = $iframe.get(0);
+                    var $iframeDoc = $(_tools.getDoc(iframe));
+                    var children = $iframeDoc.find('body').children();
+                    var lastChildOffset = $(children[children.length-1]).offset();
+                    if (lastChildOffset) {
+                        var height = lastChildOffset.top + $(children[children.length-1]).outerHeight();
+                    } else {
+                        var height = $(children[children.length-1]).outerHeight();
+                    }
+                    //$iframe.height(height + extra);
+                    iframe.height = parseInt(height + extra) + 'px';
+                },150);
+            }
+        },
+        _getSelectionRange: function(iframe) {
+            if (iframe.contentWindow && typeof iframe.contentWindow.getSelection == 'function') {
+                try {
+                    selection = iframe.contentWindow.getSelection();
+                    range = selection.getRangeAt(0);
+                }
+                catch(e){
+                    return false;
+                }
+            } else if (iframe.contentWindow.document.selection) {
+                // IE 
+                // alert(iframe.contentWindow.document.selection);
+                selection = iframe.contentWindow.document.selection;
+                range = selection.createRange();
+            } else {
+                return false;
+            }
+            return { selection : selection, range: range };
+        },
+        _getSelectionString: function(iframe) {
+            var selection, node;
+            if (iframe.contentWindow && typeof iframe.contentWindow.getSelection == 'function') {
+                try {
+                    selection = iframe.contentWindow.getSelection().toString();
+                }
+                catch(e){
+                    return false;
+                }
+            } else if (iframe.contentWindow.document.selection) {
+                // IE 
+                selection = iframe.contentWindow.document.selection.createRange().text;
+            } else {
+                return false;
+            }
+            return selection;
+        },
+        getSelectionElement: function(iframe) {
+            var selection, range, node;
+            if (iframe.contentWindow && typeof iframe.contentWindow.getSelection == 'function') {
+                try {
+                    selection = iframe.contentWindow.getSelection();
+                    range = selection.getRangeAt(0);
+                }
+                catch(e){
+                    return false;
+                }
+                node = range.commonAncestorContainer;
+            } else if (iframe.contentWindow && iframe.contentWindow.document.selection) {
+                // IE 
+                selection = iframe.contentWindow.document.selection;
+                range = selection.createRange();
+                try {
+                    node = range.parentElement();
+                }
+                catch (e) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+            return node;
+        },
+        
+        /*
+        
+            1	ELEMENT_NODE
+            2	ATTRIBUTE_NODE
+            3	TEXT_NODE
+            4	CDATA_SECTION_NODE
+            5	ENTITY_REFERENCE_NODE
+            6	ENTITY_NODE
+            7	PROCESSING_INSTRUCTION_NODE
+            8	COMMENT_NODE
+            9	DOCUMENT_NODE
+            10	DOCUMENT_TYPE_NODE
+            11	DOCUMENT_FRAGMENT_NODE
+            12`	NOTATION_NODE
+        
+        */
+        
+        setSelectionElement: function(iframe, element, mode) {
+            var selection, range, node;
+        
+            if (iframe.contentWindow && typeof iframe.contentWindow.getSelection == 'function') {
+                
+                if (mode == 'block') {
+                    var path = _tools.getHtmlPath(iframe);
+                    try {
+                        selection = iframe.contentWindow.getSelection().selectAllChildren(path[0]);
+                    }
+                    catch(e){
+                        console.log(e);
+                        return false;
+                    }
+                    return true;
+                } 
+        
+                try {
+                    selection = iframe.contentWindow.getSelection();
+                    range = selection.getRangeAt(0);
+                    node = range.commonAncestorContainer;
+                    element = iframe.contentWindow.document.createRange();
+                    range.selectNodeContents(node);
+                    selection.addRange(range);
+                }
+                catch(e){
+                    console.log(e);
+                    return false;
+                }
+                
+            } else if (iframe.contentWindow.document.selection) {
+                // IE 
+                selection = iframe.contentWindow.document.selection;
+                range = iframe.contentWindow.document.body.createTextRange();
+                range.moveToElementText(element);
+                range.select();
+                
+            } else {
+                return false;
+            }
+            return true;
+        },
+        getHtmlPath: function(iframe) {
+            var path = [];
+            var node = _tools.getSelectionElement(iframe);
+            while (node.nodeType != 1 || node.tagName.toLowerCase() != 'body') {
+                node = $(node).parent().get(0);
+                if (node.nodeType == 1 && node.tagName.toLowerCase() != 'body') {
+                    path.unshift(node);
+                }
+            }
+            return path;
+         },
+        getCurrentNode: function(iframe){
+            var node = _tools.getSelectionElement(iframe);
+            while (node.nodeType == 3){
+                node = $(node).parent().get(0);
+            }
+            return node;
+        },
+        formatText: function($this, iframe, command, args) {
+            var data = $this.data('apRichTextEditor');
+            var $iframe = data.$iframe;
+            iframe.contentWindow.focus();
+            if($.trim(_tools._getSelectionString(iframe)).length == 0) {
+                _tools.setSelectionElement( iframe, _tools.getSelectionElement(iframe), 'block' );
+            }
+            currentNode = _tools.getCurrentNode(iframe);
+            var currentNodeTagName = currentNode.tagName.toLowerCase();
+            switch ( command ) {
+                case 'none':
+                    break;
+                
+                case 'normalize':
+                        iframe.contentWindow.document.body.normalize();
+                    break;
+                    
+                case 'insertOrderedList':
+                case 'insertUnorderedList':
+                        if (
+                            currentNodeTagName == 'ul' ||
+                            currentNodeTagName == 'ol'
+                        ) {
+                            //return;
+                        }
+                        
+                        
+                        if (
+                            currentNodeTagName != 'p' &&
+                            currentNodeTagName != 'div' &&
+                            currentNodeTagName != 'li' &&
+                            currentNodeTagName != 'ul' &&
+                            currentNodeTagName != 'ol'
+                        ) {
+                            iframe.contentWindow.document.execCommand('formatBlock', false, 'p');
+                        }
+                        
+                        
+                        iframe.contentWindow.document.execCommand(command, false, args);
+                    break;
+                    
+                case 'heading':
+                        currentNode = _tools.resetList(iframe, currentNode);
+                        currentNodeTagName = currentNode.tagName.toLowerCase();
+                        
+                        if (
+                            currentNodeTagName == 'i'
+                        ) {
+                            try {
+                                iframe.contentWindow.document.execCommand('italic', false, args);
+                                setTimeout(_tools.formatText(iframe, command, args),10);
+                            } 
+                            catch(e) {
+                                console.log(e);
+                            }
+                        } else if (
+                            currentNodeTagName == 'b'
+                        ) {
+                            try {
+                                iframe.contentWindow.document.execCommand('bold', false, args);
+                                setTimeout(_tools.formatText(iframe, command, args),10);
+                            } 
+                            catch(e) {
+                                console.log(e);
+                            }
+                        }
+                        
+                        if (
+                            currentNodeTagName == 'p' ||
+                            currentNodeTagName == 'div' ||
+                            currentNodeTagName == 'h1' ||
+                            currentNodeTagName == 'h2' ||
+                            currentNodeTagName == 'h3' ||
+                            currentNodeTagName == 'h4' ||
+                            currentNodeTagName == 'h5' ||
+                            currentNodeTagName == 'h6' ||
+                            currentNodeTagName == 'span'
+                        ) {
+                            try {
+                                iframe.contentWindow.document.execCommand('formatBlock', false, args);
+                            } 
+                            catch(e) {
+                                
+                                console.log(e);
+                            }
+                        }
+                    break;
+                    
+                case 'formatBlock':
+                        currentNode = _tools.resetList(iframe, currentNode);
+                        currentNodeTagName = currentNode.tagName.toLowerCase();
+                        
+                        try {
+                            iframe.contentWindow.document.execCommand(command, false, args);
+                        } 
+                        catch(e) {
+                            console.log(e);
+                        }
+                    break;
+                
+                default:
+                    try {
+                        if (!args) {
+                            args = null;
+                        }
+                        iframe.contentWindow.document.execCommand(command, false, args);
+                    } 
+                    catch(e) {
+                        console.log(e);
+                    }
+            }
+            _tools.setSelectedButton($this, _tools.getHtmlPath(iframe));
+            _tools.resizeDoc(data, $iframe, 24);
+            return currentNode;
+        },
+        resetList: function (iframe, currentNode) {
+            /* todo USE  Path to reset list items */
+            var currentNodeTagName = currentNode.tagName.toLowerCase();
+            while (currentNodeTagName == 'li') {
+                var parentTag = $(currentNode).parent().get(0);
+                switch ( parentTag.tagName.toLowerCase() ) {
+                    case 'ul':
+                        var listCommand = 'insertUnorderedList';
+                        break;
+                    case 'ol':
+                        var listCommand = 'insertOrderedList';
+                        break;
+                    default:
+                        return currentNode;
+                }
+                try {
+                    iframe.contentWindow.document.execCommand(listCommand, false, false);
+                } 
+                catch(e) {
+                    
+                    console.log(e);
+                }
+                currentNode = _tools.getCurrentNode(iframe);
+                currentNodeTagName = currentNode.tagName.toLowerCase();
+            }
+            return currentNode;
+        },
+        setSelectedButton: function ($this, path) {
+            var data = $this.data('apRichTextEditor');
+            var $toolbar = data.$toolbar;
+            $toolbar.children('li').removeClass('selected');
+            for (var i = 0; i < path.length; i++ ) {
+                switch ( path[i].tagName.toLowerCase() ) {
+                    case 'b':
+                        $toolbar.children('.boldBt').addClass('selected');
+                        break;
+                    case 'i':
+                        $toolbar.children('.italicBt').addClass('selected');
+                        break;
+                    case 'p':
+                        $toolbar.children('.paragraphBt').addClass('selected');
+                        break;
+                        break;
+                    case 'h1':
+                        $toolbar.children('.H1Bt').addClass('selected');
+                        break;
+                    case 'h2':
+                        $toolbar.children('.H2Bt').addClass('selected');
+                        break;
+                    case 'h3':
+                        $toolbar.children('.H3Bt').addClass('selected');
+                        break;
+                    case 'h4':
+                        $toolbar.children('.H4Bt').addClass('selected');
+                        break;
+                    case 'blockcote':
+                        
+                        break;
+                    case 'ol':
+                        $toolbar.children('.insertOrderedListBt').addClass('selected');
+                        break;
+                    case 'ul':
+                        $toolbar.children('.insertUnorderedListBt').addClass('selected');
+                        break;
+                }
+            }
+        }    
+    }
     
     jQuery.fn.apRichTextEditor = function(method) {
         if (methods[method]) {
